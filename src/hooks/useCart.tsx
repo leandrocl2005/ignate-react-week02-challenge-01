@@ -35,14 +35,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
   const addProduct = async (productId: number) => {
     try {
 
-      // check if product exists
-      const responseProduct = await api.get(`/products/${productId}`);
-      const productExists = responseProduct.data;
-      if (!productExists) {
-        toast.error("Erro na adição do produto");
-        return;
-      }
-
       const responseStock = await api.get(`/stock/${productId}`);
       const productAmountInStock = responseStock.data.amount;
       
@@ -63,12 +55,15 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
           amount: productInCart.amount + 1
         });
       } else {
+        const responseProduct = await api.get(`/products/${productId}`);
+        const product = responseProduct.data;
+
         if (productAmountInStock < 1) {
           toast.error('Quantidade solicitada fora de estoque')
           return;          
         }
 
-        const updatedCart = [...cart, {...productExists, amount: 1}];
+        const updatedCart = [...cart, {...product, amount: 1}];
         setCart(updatedCart);
         localStorage.setItem(
           '@RocketShoes:cart',
@@ -83,6 +78,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   const removeProduct = (productId: number) => {
     try {
+      
       const productInCart = cart.find(
         product => product.id === productId
       );
@@ -110,13 +106,9 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {
-
-      // check if product exists
-      const responseProduct = await api.get(`/products/${productId}`);
-      const productExists = responseProduct.data;
-      if (!productExists) {
+      if (amount <= 0) {
         toast.error("Erro na alteração de quantidade do produto");
-        return;
+        return;        
       }
 
       // check if product in cart
@@ -130,9 +122,9 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
       const responseStock = await api.get(`/stock/${productId}`);
       const productAmountInStock = responseStock.data.amount;
-
+      
       if (productAmountInStock < amount) {
-        toast.error('Quantidade solicitada fora de estoque');
+        toast.error("Quantidade solicitada fora de estoque");
         return;
       }
 
